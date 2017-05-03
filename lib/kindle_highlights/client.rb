@@ -59,6 +59,7 @@ module KindleHighlights
           raise AuthenticationError, "Unable to sign in, received error: '#{amazon_error}'"
         else
           @kindle_logged_in_page = post_signin_page
+          puts "ok logged in"
         end
       end
     rescue AuthenticationError
