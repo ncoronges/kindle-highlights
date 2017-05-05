@@ -18,6 +18,10 @@ module KindleHighlights
       @books ||= load_books_from_kindle_account
     end
 
+    def book_items
+      @book_items ||= load_book_items_from_kindle_account
+    end
+
     def highlights_for(asin)
       conditionally_sign_in_to_amazon
 
@@ -78,6 +82,28 @@ module KindleHighlights
           asin                   = asin_and_title_element.attributes.fetch("href").value.split("/").last
           title                  = asin_and_title_element.inner_html
           books[asin]            = title
+        end
+
+        break if highlights_page.link_with(text: /Next/).nil?
+        highlights_page = mechanize_agent.click(highlights_page.link_with(text: /Next/))
+      end
+      books
+    end
+
+    def load_book_items_from_kindle_account
+      conditionally_sign_in_to_amazon
+
+      books           = {}
+      highlights_page = mechanize_agent.click(kindle_logged_in_page.link_with(text: /Your Books/))
+
+      loop do
+        highlights_page.search(".//td[@class='titleAndAuthor']").each do |book|
+          asin_and_title_element = book.search("a").first
+          asin                   = asin_and_title_element.attributes.fetch("href").value.split("/").last
+          title                  = asin_and_title_element.inner_html
+          author_element = book.search("span").first
+          author = author_element.inner_html.strip
+          books[asin]            = {"title"=>title, "author"=>author}
         end
 
         break if highlights_page.link_with(text: /Next/).nil?
